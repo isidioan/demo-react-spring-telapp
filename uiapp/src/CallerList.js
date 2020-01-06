@@ -3,11 +3,10 @@ import './App.css';
 import {
     ListGroup,
     ListGroupItem,
-    ListGroupItemHeading,
-    ListGroupItemText,
     Pagination,
     PaginationItem,
-    PaginationLink
+    PaginationLink,
+    FormGroup, Input,
 } from 'reactstrap';
 
 class CallerList extends Component {
@@ -16,13 +15,43 @@ class CallerList extends Component {
         isLoading: true,
         callers: [],
         recordsPerPage: 15,
-        currentPage: 1
+        currentPage: 1,
+        search : ''
     };
+
 
     async componentDidMount() {
         const response = await fetch('/api/callers/all');
         const body = await response.json();
         this.setState({callers: body, isLoading: false});
+    }
+
+    handlePageChange(e, index) {
+
+        e.preventDefault();
+
+        this.setState({
+            currentPage: index
+        });
+
+    }
+
+    async handleSearchChange(e) {
+        const search = e.target.value;
+        this.setState({search : search});
+        console.log('/api/caller/' + search);
+        search ?
+            await fetch('api/caller/' + search, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            }).then(response => response.json())
+                .then(result => this.setState({callers: result}))
+                .catch(error => console.log('Error', error)) : this.componentDidMount()
+
+
     }
 
     render() {
@@ -40,6 +69,10 @@ class CallerList extends Component {
             pages.push(i);
         }
         return (<div>
+            <FormGroup>
+                <Input type="text" name="search" id="search" value={this.state.search}
+                       onChange={(e) => this.handleSearchChange(e)} placeholder="Search"/>
+            </FormGroup>
             <ListGroup>
                 {currentCallers.map(caller =>
                     <ListGroupItem tag="a" href="#" key={caller.id}>
@@ -54,15 +87,15 @@ class CallerList extends Component {
 
             <Pagination size="sm" aria-label="Page navigation example">
                 <PaginationItem disabled = {currentPage <= 1}>
-                    <PaginationLink  onClick={() => this.setState({currentPage: 1})} first href="!#"/>
+                    <PaginationLink  onClick={(e) => this.handlePageChange(e, 1)} first href="!#"/>
                 </PaginationItem>
                 <PaginationItem disabled = {currentPage <= 1}>
-                    <PaginationLink onClick={() => this.setState({currentPage: currentPage - 1})} previous href="!#"/>
+                    <PaginationLink onClick={(e) => this.handlePageChange(e, currentPage - 1)} previous href="!#"/>
                 </PaginationItem>
 
                 {pages.map(num =>
                     <PaginationItem active = {num === currentPage} key={num}>
-                        <PaginationLink  onClick={() => this.setState({currentPage: num})} href="!#">{num}</PaginationLink>
+                        <PaginationLink  onClick={(e) => this.handlePageChange(e, num)} href="!#">{num}</PaginationLink>
                     </PaginationItem>
                 )}
                 <PaginationItem disabled = {currentPage >= pageCount}>
